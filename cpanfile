@@ -1,6 +1,10 @@
 # Validate with cpanfile-dump
 # https://metacpan.org/release/Module-CPANfile
 
+on 'configure' => sub {
+    requires 'ExtUtils::MakeMaker', '7.00';
+};
+
 on 'build' => sub {
     requires 'ExtUtils::MakeMaker', '7.00';
 };

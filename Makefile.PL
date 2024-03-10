@@ -13,6 +13,12 @@ my %parms = (
     VERSION_FROM     => 'lib/HTML/Tagset.pm',
     LICENSE          => 'artistic_2',
     MIN_PERL_VERSION => 5.010001,
+    CONFIGURE_REQUIRES => {
+        'ExtUtils::MakeMaker' => '7.00',
+    },
+    BUILD_REQUIRES => {
+        'ExtUtils::MakeMaker' => '7.00',
+    },
     TEST_REQUIRES    => {
         'Test::More' => '0.95',
     },
