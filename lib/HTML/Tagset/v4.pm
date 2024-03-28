@@ -1,13 +1,10 @@
-package HTML::Tagset;
+package HTML::Tagset::v4;
 
 use strict;
 
-use HTML::Tagset::v4;
-use HTML::Tagset::v5;
-
 =head1 NAME
 
-HTML::Tagset - data tables useful in parsing HTML
+HTML::Tagset::v4 - data tables useful in parsing HTML 4.x
 
 =head1 VERSION
 
@@ -21,25 +18,11 @@ $VERSION = '5.0.0';
 
 =head1 SYNOPSIS
 
-  # Load HTML5 tags
   use HTML::Tagset;
   # Then use any of the items in the HTML::Tagset package
   #  as need arises
 
-  # Load HTML3/4 tags:
-  BEGIN {
-    $HTML::Tagset::HTML_VERSION='v4';
-  };
-  use HTML::Tagset;
-  # Then use as above
-  # This will also work if used before any higher-level
-  # HTML::Tagset-using modules, eg HTML::TreeBuilder;
-
 =head1 DESCRIPTION
-
-BREAKING CHANGE: From version 5.0, this module will default to loading
-HTML5 tags (previously HTML4 and below), see docs on how to get the
-previous behaviour.
 
 This module contains several data tables useful in various kinds of
 HTML parsing operations.
@@ -55,7 +38,6 @@ there, are always true.)
 
 use vars qw(
     $VERSION
-    $HTML_VERSION
     %emptyElement %optionalEndTag %linkElements %boolean_attr
     %isHeadElement %isBodyElement %isPhraseMarkup
     %is_Possible_Strict_P_Content
@@ -70,25 +52,6 @@ use vars qw(
 
 Note that none of these variables are exported.
 
-=head2 HTML_VERSION
-
-Used to determine whether to load tags for parsing HTML5
-L<https://html.spec.whatwg.org/multipage/> or HTML 4 or below
-L<https://www.w3.org/TR/html4/>. This needs to be set before
-HTML::Tagset is loaded, using BEGIN. Set it to B<v4> to get HTML4
-tags and below, leave empty or set to anything else for HTML5.
-
-NB: This can also be used before HTML::Tagset-using modules, eg
-L<HTML::TreeBuilder>.
-
-    # Load Tagset for HTML4
-    BEGIN {
-      $HTML::Tagset::HTML_VERSION='v4';
-    };
-    use HTML::Tagset;
-
-=cut
-
 =head2 hashset %HTML::Tagset::emptyElement
 
 This hashset has as values the tag-names (GIs) of elements that cannot
@@ -98,43 +61,16 @@ C<$HTML::Tagset::emptyElement{'dl'}> does not exist, and so is not true.
 
 =cut
 
-if(!$HTML_VERSION || $HTML_VERSION ne 'v4') {
-    # default to v5
-    %emptyElement     = %HTML::Tagset::v5::emptyElement;
-    %optionalEndTag   = %HTML::Tagset::v5::optionalEndTag;
-    %linkElements     = %HTML::Tagset::v5::linkElements;
-    %boolean_attr     = %HTML::Tagset::v5::boolean_attr;
-    %isPhraseMarkup   = %HTML::Tagset::v5::isPhraseMarkup;
-    %is_Possible_Strict_P_Content = %HTML::Tagset::v5::is_Possible_Strict_P_Content;
-    %isHeadElement    = %HTML::Tagset::v5::isHeadElement;
-    %isList           = %HTML::Tagset::v5::isList;
-    %isTableElement   = %HTML::Tagset::v5::isTableElement;
-    %isFormElement    = %HTML::Tagset::v5::isFormElement;
-    %isBodyElement    = %HTML::Tagset::v5::isBodyElement;
-    %isHeadOrBodyElement  = %HTML::Tagset::v5::isHeadOrBodyElement;
-    %isKnown          = %HTML::Tagset::v5::isKnown;
-    %canTighten       = %HTML::Tagset::v5::canTighten;
-    @p_closure_barriers  = @HTML::Tagset::v5::p_closure_barriers;
-    %isCDATA_Parent   = %HTML::Tagset::v5::isCDATA_Parent;
-} else {
-    # v4
-    %emptyElement     = %HTML::Tagset::v4::emptyElement;
-    %optionalEndTag   = %HTML::Tagset::v4::optionalEndTag;
-    %linkElements     = %HTML::Tagset::v4::linkElements;
-    %boolean_attr     = %HTML::Tagset::v4::boolean_attr;
-    %isPhraseMarkup   = %HTML::Tagset::v4::isPhraseMarkup;
-    %is_Possible_Strict_P_Content  = %HTML::Tagset::v4::is_Possible_Strict_P_Content;
-    %isHeadElement    = %HTML::Tagset::v4::isHeadElement;
-    %isList           = %HTML::Tagset::v4::isList;
-    %isTableElement   = %HTML::Tagset::v4::isTableElement;
-    %isFormElement    = %HTML::Tagset::v4::isFormElement;
-    %isBodyElement    = %HTML::Tagset::v4::isBodyElement;
-    %isHeadOrBodyElement  = %HTML::Tagset::v4::isHeadOrBodyElement;
-    %isKnown          = %HTML::Tagset::v4::isKnown;
-    %canTighten       = %HTML::Tagset::v4::canTighten;
-    @p_closure_barriers  = @HTML::Tagset::v4::p_closure_barriers;
-    %isCDATA_Parent   = %HTML::Tagset::v4::isCDATA_Parent;
-}
+%emptyElement   = map {; $_ => 1 } qw(base link meta isindex
+                                     img br hr wbr
+                                     input area param
+                                     embed bgsound spacer
+                                     basefont col frame
+                                     ~comment ~literal
+                                     ~declaration ~pi
+                                    );
+# The "~"-initial names are for pseudo-elements used by HTML::Entities
+#  and TreeBuilder
 
 =head2 hashset %HTML::Tagset::optionalEndTag
 
@@ -144,6 +80,8 @@ C<$HTML::Tagset::emptyElement{'li'}> exists and is true.
 
 =cut
 
+%optionalEndTag = map {; $_ => 1 } qw(p li dt dd); # option th tr td);
+
 =head2 hash %HTML::Tagset::linkElements
 
 Values in this hash are tagnames for elements that might contain
@@ -151,6 +89,38 @@ links, and the value for each is a reference to an array of the names
 of attributes whose values can be links.
 
 =cut
+
+%linkElements =
+(
+ 'a'       => ['href'],
+ 'applet'  => ['archive', 'codebase', 'code'],
+ 'area'    => ['href'],
+ 'base'    => ['href'],
+ 'bgsound' => ['src'],
+ 'blockquote' => ['cite'],
+ 'body'    => ['background'],
+ 'del'     => ['cite'],
+ 'embed'   => ['pluginspage', 'src'],
+ 'form'    => ['action'],
+ 'frame'   => ['src', 'longdesc'],
+ 'iframe'  => ['src', 'longdesc'],
+ 'ilayer'  => ['background'],
+ 'img'     => ['src', 'lowsrc', 'longdesc', 'usemap'],
+ 'input'   => ['src', 'usemap'],
+ 'ins'     => ['cite'],
+ 'isindex' => ['action'],
+ 'head'    => ['profile'],
+ 'layer'   => ['background', 'src'],
+ 'link'    => ['href'],
+ 'object'  => ['classid', 'codebase', 'data', 'archive', 'usemap'],
+ 'q'       => ['cite'],
+ 'script'  => ['src', 'for'],
+ 'table'   => ['background'],
+ 'td'      => ['background'],
+ 'th'      => ['background'],
+ 'tr'      => ['background'],
+ 'xmp'     => ['href'],
+);
 
 =head2 hash %HTML::Tagset::boolean_attr
 
@@ -161,6 +131,23 @@ is simply that attribute name.  For elements with many such attributes,
 the value is a reference to a hashset containing all such attributes.
 
 =cut
+
+%boolean_attr = (
+# TODO: make these all hashes
+  'area'   => 'nohref',
+  'dir'    => 'compact',
+  'dl'     => 'compact',
+  'hr'     => 'noshade',
+  'img'    => 'ismap',
+  'input'  => { 'checked' => 1, 'readonly' => 1, 'disabled' => 1 },
+  'menu'   => 'compact',
+  'ol'     => 'compact',
+  'option' => 'selected',
+  'select' => 'multiple',
+  'td'     => 'nowrap',
+  'th'     => 'nowrap',
+  'ul'     => 'compact',
+);
 
 #==========================================================================
 # List of all elements from Extensible HTML version 1.0 Transitional DTD:
@@ -190,12 +177,32 @@ This hashset contains all phrasal-level elements.
 
 =cut
 
+%isPhraseMarkup = map {; $_ => 1 } qw(
+  span abbr acronym q sub sup
+  cite code em kbd samp strong var dfn strike
+  b i u s tt small big
+  ins del
+  a img br
+  wbr nobr blink
+  font basefont bdo
+  spacer embed noembed
+);  # had: center, hr, table
+
+
 =head2 hashset %HTML::Tagset::is_Possible_Strict_P_Content
 
 This hashset contains all phrasal-level elements that be content of a
 P element, for a strict model of HTML.
 
 =cut
+
+%is_Possible_Strict_P_Content = (
+ %isPhraseMarkup,
+ %isFormElement,
+ map {; $_ => 1} qw( object script map )
+  # I've no idea why there's these latter exceptions.
+  # I'm just following the HTML4.01 DTD.
+);
 
 #from html4 strict:
 #<!ENTITY % fontstyle "TT | I | B | BIG | SMALL">
@@ -218,11 +225,16 @@ present only in the 'head' element of an HTML document.
 
 =cut
 
+%isHeadElement = map {; $_ => 1 }
+ qw(title base link meta isindex script style object bgsound);
+
 =head2 hashset %HTML::Tagset::isList
 
 This hashset contains all elements that can contain "li" elements.
 
 =cut
+
+%isList         = map {; $_ => 1 } qw(ul ol dir menu);
 
 =head2 hashset %HTML::Tagset::isTableElement
 
@@ -231,6 +243,9 @@ a "table" element.
 
 =cut
 
+%isTableElement = map {; $_ => 1 }
+ qw(tr td th thead tbody tfoot caption col colgroup);
+
 =head2 hashset %HTML::Tagset::isFormElement
 
 This hashset contains all elements that are to be found only in/under
@@ -238,12 +253,44 @@ a "form" element.
 
 =cut
 
-=head2 hashset %HTML::Tagset::isBodyElement
+%isFormElement  = map {; $_ => 1 }
+ qw(input select option optgroup textarea button label);
+
+=head2 hashset %HTML::Tagset::isBodyMarkup
 
 This hashset contains all elements that are to be found only in/under
 the "body" element of an HTML document.
 
 =cut
+
+%isBodyElement = map {; $_ => 1 } qw(
+  h1 h2 h3 h4 h5 h6
+  p div pre plaintext address blockquote
+  xmp listing
+  center
+
+  multicol
+  iframe ilayer nolayer
+  bgsound
+
+  hr
+  ol ul dir menu li
+  dl dt dd
+  ins del
+  
+  fieldset legend
+  
+  map area
+  applet param object
+  isindex script noscript
+  table
+  center
+  form
+ ),
+ keys %isFormElement,
+ keys %isPhraseMarkup,   # And everything phrasal
+ keys %isTableElement,
+;
 
 
 =head2 hashset %HTML::Tagset::isHeadOrBodyElement
@@ -253,11 +300,25 @@ the head or in the body.
 
 =cut
 
+%isHeadOrBodyElement = map {; $_ => 1 }
+  qw(script isindex style object map area param noscript bgsound);
+  # i.e., if we find 'script' in the 'body' or the 'head', don't freak out.
+
+
 =head2 hashset %HTML::Tagset::isKnown
 
 This hashset lists all known HTML elements.
 
 =cut
+
+%isKnown = (%isHeadElement, %isBodyElement,
+  map{; $_=>1 }
+   qw( head body html
+       frame frameset noframes
+       ~comment ~pi ~directive ~literal
+));
+ # that should be all known tags ever ever
+
 
 =head2 hashset %HTML::Tagset::canTighten
 
@@ -266,6 +327,20 @@ children or siblings.
 
 =cut
 
+%canTighten = %isKnown;
+delete @canTighten{
+  keys(%isPhraseMarkup), 'input', 'select',
+  'xmp', 'listing', 'plaintext', 'pre',
+};
+  # xmp, listing, plaintext, and pre  are untightenable, and
+  #   in a really special way.
+@canTighten{'hr','br'} = (1,1);
+ # exceptional 'phrasal' things that ARE subject to tightening.
+
+# The one case where I can think of my tightening rules failing is:
+#  <p>foo bar<center> <em>baz quux</em> ...
+#                    ^-- that would get deleted.
+# But that's pretty gruesome code anyhow.  You gets what you pays for.
 
 #==========================================================================
 
@@ -312,6 +387,14 @@ barrier-tags.
 
 =cut
 
+@p_closure_barriers = qw(
+  li blockquote
+  ul ol menu dir
+  dl dt dd
+  td th tr table caption
+  div
+ );
+
 # In an ideal world (i.e., XHTML) we wouldn't have to bother with any of this
 # monkey business of barriers to minimization!
 
@@ -320,6 +403,11 @@ barrier-tags.
 This hashset includes all elements whose content is CDATA.
 
 =cut
+
+%isCDATA_Parent = map {; $_ => 1 }
+  qw(script style  xmp listing plaintext);
+
+# TODO: there's nothing else that takes CDATA children, right?
 
 # As the HTML3 DTD (Raggett 1995-04-24) noted:
 #   The XMP, LISTING and PLAINTEXT tags are incompatible with SGML
@@ -356,10 +444,10 @@ Copyright 1995-2000 Gisle Aas.
 
 Copyright 2000-2005 Sean M. Burke.
 
-Copyright 2005-2024 Andy Lester.
+Copyright 2005-2008 Andy Lester.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the Artistic License version 2.0.
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -371,14 +459,13 @@ C<HTML::LinkExtor>.  Then it was maintained by Sean M. Burke.
 
 Current maintainer: Andy Lester, C<< <andy at petdance.com> >>
 
-HTML::Tagset is part of the libwww-perl organization on GitHub.
-
-L<https://github.com/libwww-perl>
-
 =head1 BUGS
 
 Please report any bugs or feature requests to
-L<https://github.com/libwww-perl/HTML-Tagset/issues>.
+C<bug-html-tagset at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=HTML-Tagset>.  I will
+be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
 
 =cut
 

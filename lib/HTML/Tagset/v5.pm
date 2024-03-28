@@ -1,13 +1,10 @@
-package HTML::Tagset;
+package HTML::Tagset::v5;
 
 use strict;
 
-use HTML::Tagset::v4;
-use HTML::Tagset::v5;
-
 =head1 NAME
 
-HTML::Tagset - data tables useful in parsing HTML
+HTML::Tagset::v5 - data tables useful in parsing HTML 5.x
 
 =head1 VERSION
 
@@ -21,25 +18,12 @@ $VERSION = '5.0.0';
 
 =head1 SYNOPSIS
 
-  # Load HTML5 tags
+  $HTML::Tagset::HTML_VERSION='v5';
   use HTML::Tagset;
   # Then use any of the items in the HTML::Tagset package
   #  as need arises
 
-  # Load HTML3/4 tags:
-  BEGIN {
-    $HTML::Tagset::HTML_VERSION='v4';
-  };
-  use HTML::Tagset;
-  # Then use as above
-  # This will also work if used before any higher-level
-  # HTML::Tagset-using modules, eg HTML::TreeBuilder;
-
 =head1 DESCRIPTION
-
-BREAKING CHANGE: From version 5.0, this module will default to loading
-HTML5 tags (previously HTML4 and below), see docs on how to get the
-previous behaviour.
 
 This module contains several data tables useful in various kinds of
 HTML parsing operations.
@@ -55,7 +39,6 @@ there, are always true.)
 
 use vars qw(
     $VERSION
-    $HTML_VERSION
     %emptyElement %optionalEndTag %linkElements %boolean_attr
     %isHeadElement %isBodyElement %isPhraseMarkup
     %is_Possible_Strict_P_Content
@@ -70,25 +53,6 @@ use vars qw(
 
 Note that none of these variables are exported.
 
-=head2 HTML_VERSION
-
-Used to determine whether to load tags for parsing HTML5
-L<https://html.spec.whatwg.org/multipage/> or HTML 4 or below
-L<https://www.w3.org/TR/html4/>. This needs to be set before
-HTML::Tagset is loaded, using BEGIN. Set it to B<v4> to get HTML4
-tags and below, leave empty or set to anything else for HTML5.
-
-NB: This can also be used before HTML::Tagset-using modules, eg
-L<HTML::TreeBuilder>.
-
-    # Load Tagset for HTML4
-    BEGIN {
-      $HTML::Tagset::HTML_VERSION='v4';
-    };
-    use HTML::Tagset;
-
-=cut
-
 =head2 hashset %HTML::Tagset::emptyElement
 
 This hashset has as values the tag-names (GIs) of elements that cannot
@@ -98,43 +62,15 @@ C<$HTML::Tagset::emptyElement{'dl'}> does not exist, and so is not true.
 
 =cut
 
-if(!$HTML_VERSION || $HTML_VERSION ne 'v4') {
-    # default to v5
-    %emptyElement     = %HTML::Tagset::v5::emptyElement;
-    %optionalEndTag   = %HTML::Tagset::v5::optionalEndTag;
-    %linkElements     = %HTML::Tagset::v5::linkElements;
-    %boolean_attr     = %HTML::Tagset::v5::boolean_attr;
-    %isPhraseMarkup   = %HTML::Tagset::v5::isPhraseMarkup;
-    %is_Possible_Strict_P_Content = %HTML::Tagset::v5::is_Possible_Strict_P_Content;
-    %isHeadElement    = %HTML::Tagset::v5::isHeadElement;
-    %isList           = %HTML::Tagset::v5::isList;
-    %isTableElement   = %HTML::Tagset::v5::isTableElement;
-    %isFormElement    = %HTML::Tagset::v5::isFormElement;
-    %isBodyElement    = %HTML::Tagset::v5::isBodyElement;
-    %isHeadOrBodyElement  = %HTML::Tagset::v5::isHeadOrBodyElement;
-    %isKnown          = %HTML::Tagset::v5::isKnown;
-    %canTighten       = %HTML::Tagset::v5::canTighten;
-    @p_closure_barriers  = @HTML::Tagset::v5::p_closure_barriers;
-    %isCDATA_Parent   = %HTML::Tagset::v5::isCDATA_Parent;
-} else {
-    # v4
-    %emptyElement     = %HTML::Tagset::v4::emptyElement;
-    %optionalEndTag   = %HTML::Tagset::v4::optionalEndTag;
-    %linkElements     = %HTML::Tagset::v4::linkElements;
-    %boolean_attr     = %HTML::Tagset::v4::boolean_attr;
-    %isPhraseMarkup   = %HTML::Tagset::v4::isPhraseMarkup;
-    %is_Possible_Strict_P_Content  = %HTML::Tagset::v4::is_Possible_Strict_P_Content;
-    %isHeadElement    = %HTML::Tagset::v4::isHeadElement;
-    %isList           = %HTML::Tagset::v4::isList;
-    %isTableElement   = %HTML::Tagset::v4::isTableElement;
-    %isFormElement    = %HTML::Tagset::v4::isFormElement;
-    %isBodyElement    = %HTML::Tagset::v4::isBodyElement;
-    %isHeadOrBodyElement  = %HTML::Tagset::v4::isHeadOrBodyElement;
-    %isKnown          = %HTML::Tagset::v4::isKnown;
-    %canTighten       = %HTML::Tagset::v4::canTighten;
-    @p_closure_barriers  = @HTML::Tagset::v4::p_closure_barriers;
-    %isCDATA_Parent   = %HTML::Tagset::v4::isCDATA_Parent;
-}
+%emptyElement   = map {; $_ => 1 } qw(area base br col embed
+                                      hr iframe img input link
+                                      meta param source template
+                                      track wbr
+                                     ~comment ~literal
+                                     ~declaration ~pi
+                                    );
+# The "~"-initial names are for pseudo-elements used by HTML::Entities
+#  and TreeBuilder
 
 =head2 hashset %HTML::Tagset::optionalEndTag
 
@@ -144,6 +80,10 @@ C<$HTML::Tagset::emptyElement{'li'}> exists and is true.
 
 =cut
 
+%optionalEndTag = map {; $_ => 1 } qw(p li dt dd);
+#v4
+# option th tr td);
+
 =head2 hash %HTML::Tagset::linkElements
 
 Values in this hash are tagnames for elements that might contain
@@ -151,6 +91,28 @@ links, and the value for each is a reference to an array of the names
 of attributes whose values can be links.
 
 =cut
+
+%linkElements =
+(
+ 'a'       => ['href'],
+ 'area'    => ['href'],
+ 'base'    => ['href'],
+ 'blockquote' => ['cite'],
+ 'del'     => ['cite'],
+ 'embed'   => ['src'],
+ 'form'    => ['action'],
+ 'iframe'  => ['src'],
+ 'img'     => ['src', 'usemap'],
+ 'input'   => ['src'],
+ 'ins'     => ['cite'],
+ 'link'    => ['href'],
+ 'object'  => ['data', 'usemap'],
+ 'q'       => ['cite'],
+ 'script'  => ['src'],
+);
+
+# v4
+# applet bgsound body embed=pluginspage frame iframe=longdesc ilayer img=lowsrc,longdesc input=usemap isindex head layer object=classid,codebase,archive script=for table td th tr xmp
 
 =head2 hash %HTML::Tagset::boolean_attr
 
@@ -161,6 +123,33 @@ is simply that attribute name.  For elements with many such attributes,
 the value is a reference to a hashset containing all such attributes.
 
 =cut
+
+# 'hidden', 'itemscope', apply to all elements!
+%boolean_attr = (
+  'area'     => { 'nohref' => 1 },
+  'audio'    => { 'controls' => 1, 'loop' => 1, 'muted' => 1, },
+  'button'   => { 'disabled' => 1, 'formnovalidate' => 1 },
+  'details'  => { 'open' => 1, }, 
+  'dialog'   => { 'open' => 1, }, 
+  'fieldset' => { 'disabled' => 1 },
+  'form'     => { 'novalidate' => 1, },
+  'img'      => { 'ismap' => 1 },
+  'iframe'   => { 'allowfullscreen' => 1, 'allowpaymentrequest' => 1 },
+  'input'    => { 'checked' => 1, 'readonly' => 1, 'disabled' => 1, 'required' => 1, 'multiple' => 1, 'formnovalidate' => 1, 'hidden' => 1, },
+  'ol'       => { 'reversed' => 1 },
+  'optgroup' => { 'disabled' => 1 },
+  'option'   => { 'disabled' => 1, 'selected' => 1 },
+  'script'   => { 'async' => 1, 'defer' => 1, 'nomodule' => 1, },
+  'select'   => { 'multiple' => 1, 'disabled' => 1, 'readonly' => 1,  },
+  'textarea' => { 'disabled' => 1, 'readonly' => 1, 'required' => 1, },
+  'track'    => { 'default' => 1 },
+  'video'    => { 'controls' => 1, 'loop' => 1, 'muted' => 1, 'playsinline' => 1, },
+  ( map {; { 'hidden'    => 1 } } (keys %isKnown) ),
+  ( map {; { 'itemscope' => 1 } } (keys %isKnown) ),
+);
+
+#v4
+# dir hr td th
 
 #==========================================================================
 # List of all elements from Extensible HTML version 1.0 Transitional DTD:
@@ -190,12 +179,33 @@ This hashset contains all phrasal-level elements.
 
 =cut
 
+# https://html.spec.whatwg.org/multipage/dom.html#phrasing-content-2
+%isPhraseMarkup = map {; $_ => 1 } qw(
+  a abbr audio b bdi bdo br button canvas cite code data datalist del dfn em embed i iframe img input ins kbd keygen label map mark math meter noscript object output picture progress q ruby s samp script select slot small span strong sub sup svg template textarea time u var video wbr
+  area link meta
+);  # had: center, hr, table
+# v4
+# acronym
+# strike
+# tt big 
+# nobr blink
+# font basefont
+# spacer noembed
+
 =head2 hashset %HTML::Tagset::is_Possible_Strict_P_Content
 
-This hashset contains all phrasal-level elements that be content of a
+This hashset contains all phrasal-level elements that may be content of a
 P element, for a strict model of HTML.
 
 =cut
+
+%is_Possible_Strict_P_Content = (
+ %isPhraseMarkup,
+ %isFormElement,
+ map {; $_ => 1} qw( object script map )
+  # I've no idea why there's these latter exceptions.
+  # I'm just following the HTML4.01 DTD.
+);
 
 #from html4 strict:
 #<!ENTITY % fontstyle "TT | I | B | BIG | SMALL">
@@ -218,11 +228,20 @@ present only in the 'head' element of an HTML document.
 
 =cut
 
+%isHeadElement = map {; $_ => 1 }
+qw(base title);
+#v4
+# isindex object(allowed in body) bgsound link(allowed in body) meta(ditto)
+
 =head2 hashset %HTML::Tagset::isList
 
 This hashset contains all elements that can contain "li" elements.
 
 =cut
+
+%isList         = map {; $_ => 1 } qw(ul ol menu);
+#v4
+# dir
 
 =head2 hashset %HTML::Tagset::isTableElement
 
@@ -231,6 +250,9 @@ a "table" element.
 
 =cut
 
+%isTableElement = map {; $_ => 1 }
+ qw(caption colgroup col thead tbody tfoot tr td th);
+
 =head2 hashset %HTML::Tagset::isFormElement
 
 This hashset contains all elements that are to be found only in/under
@@ -238,13 +260,51 @@ a "form" element.
 
 =cut
 
-=head2 hashset %HTML::Tagset::isBodyElement
+%isFormElement  = map {; $_ => 1 }
+qw(input optgroup select textarea label);
+
+# v4
+# button
+
+=head2 hashset %HTML::Tagset::isBodyMarkup
 
 This hashset contains all elements that are to be found only in/under
 the "body" element of an HTML document.
 
 =cut
 
+%isBodyElement = map {; $_ => 1 } qw(
+  h1 h2 h3 h4 h5 h6 hgroup
+  p div pre address blockquote
+
+  iframe
+
+  hr
+  ol ul menu li menuitem
+  dl dt dd
+  ins del
+  
+  fieldset legend
+  
+  map area
+  param object
+  script noscript
+  table
+  form
+  option dl
+
+  article aside details summary dialog footer header main nav section
+  source track
+  figure figcaption
+  rp rt
+ ),
+ keys %isFormElement,
+ keys %isPhraseMarkup,   # And everything phrasal
+ keys %isTableElement,
+;
+
+# v4
+# xmp listing plaintext center multicol ilayer nolayer bgsound dir applet isindex
 
 =head2 hashset %HTML::Tagset::isHeadOrBodyElement
 
@@ -253,11 +313,26 @@ the head or in the body.
 
 =cut
 
+%isHeadOrBodyElement = map {; $_ => 1 }
+  qw(script style object map area param noscript template link meta);
+  # i.e., if we find 'script' in the 'body' or the 'head', don't freak out.
+
+# isindex bgsound
+
 =head2 hashset %HTML::Tagset::isKnown
 
 This hashset lists all known HTML elements.
 
 =cut
+
+%isKnown = (%isHeadElement, %isBodyElement, %isHeadOrBodyElement,
+  map{; $_=>1 }
+   qw( head body html
+       ~comment ~pi ~directive ~literal
+));
+ # that should be all known tags ever ever
+# v4
+# frame frameset noframes
 
 =head2 hashset %HTML::Tagset::canTighten
 
@@ -266,6 +341,20 @@ children or siblings.
 
 =cut
 
+%canTighten = %isKnown;
+delete @canTighten{
+  keys(%isPhraseMarkup), 'input', 'select',
+  'xmp', 'listing', 'plaintext', 'pre',
+};
+  # xmp, listing, plaintext, and pre  are untightenable, and
+  #   in a really special way.
+@canTighten{'hr','br'} = (1,1);
+ # exceptional 'phrasal' things that ARE subject to tightening.
+
+# The one case where I can think of my tightening rules failing is:
+#  <p>foo bar<center> <em>baz quux</em> ...
+#                    ^-- that would get deleted.
+# But that's pretty gruesome code anyhow.  You gets what you pays for.
 
 #==========================================================================
 
@@ -312,6 +401,14 @@ barrier-tags.
 
 =cut
 
+@p_closure_barriers = qw(
+  li blockquote
+  ul ol menu dir
+  dl dt dd
+  td th tr table caption
+  div
+ );
+
 # In an ideal world (i.e., XHTML) we wouldn't have to bother with any of this
 # monkey business of barriers to minimization!
 
@@ -320,6 +417,11 @@ barrier-tags.
 This hashset includes all elements whose content is CDATA.
 
 =cut
+
+%isCDATA_Parent = map {; $_ => 1 }
+  qw(script style  xmp listing plaintext);
+
+# TODO: there's nothing else that takes CDATA children, right?
 
 # As the HTML3 DTD (Raggett 1995-04-24) noted:
 #   The XMP, LISTING and PLAINTEXT tags are incompatible with SGML
@@ -356,10 +458,10 @@ Copyright 1995-2000 Gisle Aas.
 
 Copyright 2000-2005 Sean M. Burke.
 
-Copyright 2005-2024 Andy Lester.
+Copyright 2005-2008 Andy Lester.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the Artistic License version 2.0.
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -371,14 +473,13 @@ C<HTML::LinkExtor>.  Then it was maintained by Sean M. Burke.
 
 Current maintainer: Andy Lester, C<< <andy at petdance.com> >>
 
-HTML::Tagset is part of the libwww-perl organization on GitHub.
-
-L<https://github.com/libwww-perl>
-
 =head1 BUGS
 
 Please report any bugs or feature requests to
-L<https://github.com/libwww-perl/HTML-Tagset/issues>.
+C<bug-html-tagset at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=HTML-Tagset>.  I will
+be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
 
 =cut
 
