@@ -12,7 +12,7 @@ Version 3.24
 
 =cut
 
-our $VERSION = '3.24';
+our $VERSION = '3.24_01';
 
 =head1 SYNOPSIS
 
