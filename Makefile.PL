@@ -1,6 +1,6 @@
 package main;
 
-use 5.010;
+use 5.008;
 
 use strict;
 
@@ -12,7 +12,7 @@ my %parms = (
     ABSTRACT         => 'Data tables useful in parsing HTML',
     VERSION_FROM     => 'lib/HTML/Tagset.pm',
     LICENSE          => 'artistic_2',
-    MIN_PERL_VERSION => 5.010001,
+    MIN_PERL_VERSION => 5.008,
     CONFIGURE_REQUIRES => {
         'ExtUtils::MakeMaker' => '6.46',
     },

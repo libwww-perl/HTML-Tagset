@@ -1,5 +1,11 @@
 Revision history for Perl extension HTML::Tagset
 
+2025-12-31  Andy Lester
+
+        * Release 3.26
+
+        Drops the required Perl back to 5.8.
+
 2024-03-11  Andy Lester
 
         * Release 3.24
